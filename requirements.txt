@@ -1,0 +1,15 @@
+bert-score
+datasets
+evaluate
+huggingface-hub
+rouge_score
+sacrebleu
+sacremoses
+safetensors
+torch
+tqdm
+scikit-learn
+spacy
+wordfreq
+numpy==1.26.4
+streamlit
