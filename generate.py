@@ -164,7 +164,7 @@ def create_data_loader_mask(df, batch_size, tokenizer, shuffle=False, is_val=Fal
     data_loader = DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
     return data_loader
 
-class BARTLSTMGenerator2(nn.Module):
+class BARTLSTMGenerator2(nn.Module, PyTorchModelHubMixin):
     def __init__(self, config, bert_model_name='lucadiliello/bart-small', start_token_id=0, end_token_id=2, max_seq_length=80):
         super(BARTLSTMGenerator2, self).__init__()
         self.device = config.device
@@ -267,7 +267,7 @@ class BARTLSTMGenerator2(nn.Module):
         logits = self.out(x)  # (batch, seq_len, vocab_size)
         return logits
 
-class Attention(nn.Module):
+class Attention(nn.Module, PyTorchModelHubMixin):
     def __init__(self, hidden_size, num_heads=1, bias=True, dropout=0.1, vocab_size=50265):
         super().__init__()
         self.embedding = nn.Embedding(vocab_size, hidden_size)
@@ -361,38 +361,38 @@ class simplified():
         self.tokenizer = BertTokenizer.from_pretrained(bert_model_name)
 
         # Load the pretrained BART model
-        self.embedding_model = BertModel.from_pretrained(bert_model_name)
+        self.embedding_model = BertModel.from_pretrained("Nubletz/CyBERT-embedding")
 
         # Print model architecture (optional)
 
         self.device = self.config.device
 
         # Define the decoder for text generation
-        self.decoder_G_AB = BARTLSTMGenerator2(self.config)
+        self.decoder_G_AB = BARTLSTMGenerator2.from_pretrained("Nubletz/CyBERT-GAB")
 
-        self.decoder_G_BA = BARTLSTMGenerator2(self.config)
+        self.decoder_G_BA = BARTLSTMGenerator2.from_pretrained("Nubletz/CyBERT-GBA")
 
         self.decoder_tf_AB = nn.LSTM(input_size=self.config.style_dim, hidden_size=self.config.style_dim,
                             num_layers=1, batch_first=True)
         self.decoder_tf_BA = nn.LSTM(input_size=self.config.style_dim, hidden_size=self.config.style_dim,
                             num_layers=1, batch_first=True)
 
-        self.attention = Attention(self.config.hidden_size).to(self.config.device)
+        self.attention = Attention.from_pretrained("Nubletz/CyBERT-attention", self.config.hidden_size)
 
         if self.config.continueTrain:
             print("Load decoder transfer weight..")
-            load_model(self.embedding_model, f'{checkpoint_dir}/model.safetensors')
+            # load_model(self.embedding_model, f'{checkpoint_dir}/model.safetensors')
             # load_model(classifier, f'{checkpoint_dir}/classifier.safetensors')
             # load_model(decoder, f'{checkpoint_dir}/decoderR.safetensors')
             # load_model(decoder_s_AB, f'{checkpoint_dir}/main-LSTM-decoderRs-AB.safetensors')
             # load_model(decoder_s_BA, f'{checkpoint_dir}/main-LSTM-decoderRs-BA.safetensors')
-            load_model(self.decoder_G_AB, f'{checkpoint_dir}/LSTM-decoderGAB.safetensors')
-            load_model(self.decoder_G_BA, f'{checkpoint_dir}/LSTM-decoderGBA.safetensors')
+            # load_model(self.decoder_G_AB, f'{checkpoint_dir}/LSTM-decoderGAB.safetensors')
+            # load_model(self.decoder_G_BA, f'{checkpoint_dir}/LSTM-decoderGBA.safetensors')
             # load_model(style_w, f'{log_dir}/style_w.safetensors')
             # load_model(content_w, f'{log_dir}/content_w.safetensors')
             load_model(self.decoder_tf_AB, f'{checkpoint_dir}/LSTM-decodertfAB.safetensors')
             load_model(self.decoder_tf_BA, f'{checkpoint_dir}/LSTM-decodertfBA.safetensors')
-            load_model(self.attention, f'{checkpoint_dir}/attention.safetensors')
+            # load_model(self.attention, f'{checkpoint_dir}/attention.safetensors')
             if not self.config.tf_train:
                 for param in self.decoder_tf_AB.parameters():
                     param.requires_grad = False
